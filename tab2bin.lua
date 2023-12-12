@@ -57,6 +57,8 @@ function char_set(str)
 	return tab
 end
 
+-- to be reworked and fixed
+
 function tab2bin(format, sub, tab, addr)
 	-- pushes bits from the right
 	local function w_bits()

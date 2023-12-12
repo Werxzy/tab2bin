@@ -58,6 +58,7 @@ After a store operation happens, the `last read value` is set to `nil` and store
 tab = {1,2}
 form = "[#8,#8]"
 tab2bin(form, nil, tab, 0x8000)
+tab2 = tab2bin(form, nil, 0x8000)
 ```
 
 ```lua
@@ -106,6 +107,8 @@ tab = {
 }
 form = "[#8({name=?5,health=#5,maxhealth=#5})]"
 ```
+
+`todo: add examples of sub-formats when implemented`
 
 ## Extras
 
