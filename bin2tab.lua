@@ -32,8 +32,8 @@ function bin2tab(addr, format, sub)
 	local reader = r_bits()
 	
 	local char_stores = char_set"})],"
-	local simple_pico8op = char_set"#%!@$-+<>?"
-	local char_stoppers = char_set"#%!@$-+<>?(){}[],="
+	-- local simple_op = char_set"#%?!@$-+<>"
+	local char_stoppers = char_set"#%?!@$-+<>(){}[],="
 	
 	local tab_current = {}
 	local tab_i = 1
