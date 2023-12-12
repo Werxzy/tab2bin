@@ -49,7 +49,7 @@ While the `last read value` is made or changed, it only gets added to the table(
 - `}` end of keyed table
 - `)` end of loop
 
-After a store operation happens, the `last read value` is set to `nil` and store operations are skipped if the `last read value` is `nil`. If a new values is read into the `last read value`, the old one will be lost. In addition, the end of a table (`]` or `]`) will set that table to be the `last read value`, so that it can be appended to another table.
+After a store operation happens, the `last read value` is set to `nil` and store operations are skipped if the `last read value` is `nil`. If a new values is read into the `last read value`, the old one will be lost. In addition, the end of a table (`]` or `}`) will set that table to be the `last read value`, so that it can be appended to another table.
 
 ## Examples
 
