@@ -122,7 +122,6 @@ function bin2tab(addr, format, sub)
 			for m = 1, reader(val(read_to_stopper())) do
 				last_value ..= chr(reader(8))
 			end
-			print(format[i])
 		end
 
 		i += 1
