@@ -9,7 +9,7 @@ Currently tab2bin is being worked on.
 |||
 |-|-|
 |`n`| Any number recognized by Pico-8 |
-|`xyz`| Stored variable name, can by almost any string |
+|`xyz`| Stored variable name, can replace any `n`|
 |`_`| Any element or number |
 |`abc`| Any string, though unrelated to stored variables |
 
