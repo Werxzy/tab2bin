@@ -1,3 +1,5 @@
+-- bin2tab
+-- by werxzy
 
 function char_set(str)
 	local tab = {}
@@ -7,7 +9,7 @@ function char_set(str)
 	return tab
 end
 
-function bin2tab(format, sub, addr)
+function bin2tab(addr, format, sub)
 	local function r_bits()
 		local b, c, a, mask = 0, 8, addr, split"1,3,7,15,31,63,127,255" -- is table read faster than ((1<<x)-1) ?
 		-- can only read 16 bits at a time
@@ -87,7 +89,7 @@ function bin2tab(format, sub, addr)
 
 		elseif ch == "(" then -- start of loop
 		    add(loop_stack, {i, last_value})
-					elseif ch == ")" then -- end of loop check
+		elseif ch == ")" then -- end of loop check
 			local l = loop_stack[#loop_stack]
 			l[2] -= 1
 			if l[2] == 0 then -- end loop

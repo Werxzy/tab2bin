@@ -1,4 +1,4 @@
--- bin2tab, tab2bin
+-- tab2bin
 -- by werxzy
 
 --[[ format
@@ -59,7 +59,7 @@ end
 
 -- to be reworked and fixed
 
-function tab2bin(format, sub, tab, addr)
+function tab2bin(tab, addr, format, sub)
 	-- pushes bits from the right
 	local function w_bits()
 		local b, c, a, mask = 0, 0, addr, split"1,3,7,15,31,63,127,255"

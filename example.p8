@@ -6,7 +6,7 @@ __lua__
 
 
 -- d = {{1,2,3},{100,200,300},{255,64,8}}}
--- tab2bin(form, nil, d, 0x8000)
+-- tab2bin(d, 0x8000, form)
 poke(0x8000, 3, 1,2,3, 100,150,200, 255,64,8)
 --temp poke
 
@@ -15,7 +15,7 @@ poke(0x8000, 3, 1,2,3, 100,150,200, 255,64,8)
 -- form = "[#8([#8,#8,#8])]"
 form = "[#8([!3(#8)])]"
 
-d = bin2tab(form, nil, 0x8000)
+d = bin2tab(0x8000, form)
 for a in all(d) do
 	local s = ""
 	for b in all(a) do
@@ -28,7 +28,7 @@ end
 form = "?8"
 --form = "[?8]"
 poke(0x8000, 5, ord("abcde", 1, 5))
-d = bin2tab(form, nil, 0x8000)
+d = bin2tab(0x8000, form)
 print(d)
 
 __gfx__

@@ -58,7 +58,7 @@ After a store operation happens, the `last read value` is set to `nil` and store
 tab = {1,2}
 form = "[#8,#8]"
 tab2bin(form, nil, tab, 0x8000)
-tab2 = tab2bin(form, nil, 0x8000)
+tab2 = tab2bin(0x8000, form)
 ```
 
 ```lua
