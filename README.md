@@ -49,7 +49,7 @@ While the `last read value` is made or changed, it only gets added to the table(
 - `}` end of keyed table
 - `)` end of loop
 
-This also means that if a new values is read into the `last read value`, the old one will be lost. In addition, the end of a table (`]` or `]`) will set that table to be the `last read value`, so that it can be appended to another table.
+After a store operation happens, the `last read value` is set to `nil` and store operations are skipped if the `last read value` is `nil`. If a new values is read into the `last read value`, the old one will be lost. In addition, the end of a table (`]` or `]`) will set that table to be the `last read value`, so that it can be appended to another table.
 
 ## Examples
 
@@ -64,14 +64,12 @@ tab2bin(form, nil, tab, 0x8000)
 -- reads a variable amount of numbers, up to 255
 tab = {1,2,4,8,16,32,64,128}
 form = "[#8(#8)]"
-tab2bin(form, nil, tab, 0x8000)
 ```
 
 ```lua
 -- reads a table of tables
 tab = {{1,2,4},{8,16,32},{64,128,3}}
 form = "[#8([#8,#8,#8])]"
-tab2bin(form, nil, tab, 0x8000)
 
 -- the format will also work with a fixed loop size
 form = "[#8([!3(#8)])]"
@@ -89,3 +87,26 @@ form = "[#16>16@dec#16+dec]"
 +dec add the lower 16 bits in for the decimal (0xffff.ffff)
 ]]
 ```
+
+```lua
+tab = {
+    x = 10,
+    y = 30,
+    z = 40
+}
+form = "{x=#8,y=#8,z=#8}
+```
+
+```lua
+tab = {
+    {name = "player", health = 5, maxhealth = 10},
+    {name = "enemy1", health = 3, maxhealth = 3},
+    {name = "enemy2", health = 2, maxhealth = 4},
+    -- ...
+}
+form = "[#8({name=?5,health=#5,maxhealth=#5})]"
+```
+
+## Extras
+
+Something that would be nice to have is a format calculator function that takes in a table and returns a string that would best compress that table. This way any the format could be stored inside the pico-memory and the table could be easily compressed and decompressed without even knowing the format. Though this would be very complex and will likely have problems. (So I will not be the one making it if ever.)
