@@ -3,8 +3,8 @@
 
 function char_set(str)
 	local tab = {}
-	for i = 1,#str do
-		tab[str[i]] = true
+	for s in all(str) do
+		tab[s] = true
 	end
 	return tab
 end
@@ -52,6 +52,7 @@ function bin2tab(addr, format, sub)
 			ch = format[i]
 		until not ch or char_stoppers[ch] 
 		i -= 1
+		-- could use sub() to improve performance?
 		return s
 	end
 
@@ -88,7 +89,16 @@ function bin2tab(addr, format, sub)
 			tab_current, tab_i, tab_type = unpack(deli(tab_stack))
 
 		elseif ch == "(" then -- start of loop
-		    add(loop_stack, {i, last_value})
+			if last_value > 0 then
+		    	add(loop_stack, {i, last_value})
+			else -- no values to read inside loop, skip to end of loop
+				local loop_count = 1
+				repeat
+					local ch2 = format[i]
+					loop_count += tonum(ch2 == "(") - tonum(ch2 == ")")
+					i += 1
+				until loop_count == 0
+			end
 		elseif ch == ")" then -- end of loop check
 			local l = loop_stack[#loop_stack]
 			l[2] -= 1
