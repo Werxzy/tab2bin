@@ -11,8 +11,8 @@ local function char_set(str)
 	return tab
 end
 
-local char_stores = char_set"})],"
-local char_stoppers = char_set"#%?!@$-+<>(){}[],="
+local char_stores, char_stoppers 
+	= char_set"})],", char_set"#%?!@$-+<>(){}[],="
 
 local function r_bits(addr)
 	local b, c, a = 0, 8, addr
@@ -21,9 +21,8 @@ local function r_bits(addr)
 		local x = 0
 		while n > 0 do
 			if c == 8 then
-				b = @a>>8 -- read next byte, put into position
+				b, c = @a>>8, 0 -- read next byte, put into position and reset bit read count
 				a += 1 -- next address
-				c = 0 -- reset bit read count
 			end
 			local c2 = min(n, 8-c) -- get max possible read for byte
 			c += c2 -- raise read count for current byte
@@ -67,8 +66,8 @@ function bin2tab(addr, format, subformat)
 		end
 
 		if char_stores[ch] and last_value ~= nil then -- store value in table on })],
-			tab_current[tab_i], last_value = last_value
-			tab_i = tab_type == "[" and tab_i+1 or ""
+			tab_current[tab_i], tab_i, last_value 
+				= last_value, tab_type == "[" and tab_i+1 or ""
 		end
 		
 		if ch == "[" or ch == "{" then -- start of table
@@ -78,7 +77,8 @@ function bin2tab(addr, format, subformat)
 				= {}, ch == "[" and 1 or "", ch
 
 		elseif ch == "]" or ch == "}" then -- end of table
-			last_value, tab_current, tab_i, tab_type = tab_current, unpack(deli(tab_stack))
+			last_value, tab_current, tab_i, tab_type 
+				= tab_current, unpack(deli(tab_stack))
 
 		elseif ch == "(" then -- start of loop
 			if last_value > 0 then
