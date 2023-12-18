@@ -89,15 +89,17 @@ function bin2tab(addr, format, subformat)
 			tab_current, tab_i, tab_type = unpack(deli(tab_stack))
 
 		elseif ch == "(" then -- start of loop
+			print("a"..last_value)
 			if last_value > 0 then
 		    	add(loop_stack, {i, last_value})
 			else -- no values to read inside loop, skip to end of loop
 				local loop_count = 1
 				repeat
+					i += 1
 					local ch2 = format[i]
 					loop_count += tonum(ch2 == "(") - tonum(ch2 == ")")
-					i += 1
 				until loop_count == 0
+				last_value = nil
 			end
 		elseif ch == ")" then -- end of loop check
 			local l = loop_stack[#loop_stack]

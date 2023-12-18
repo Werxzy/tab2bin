@@ -48,7 +48,7 @@ __lua__
 --tab = {1,2,3,9,8,7}
 
 form = "[#8([#8(#8)])]"
-tab = {{1,2,3,4},{3},{9,8,7}}
+tab = {{1,2,3,4},{},{9,8,7}}
 
 --form = "[#8>>16@dec#8+dec]"
 print(tab2bin(tab, 0x8000, form))
@@ -56,8 +56,13 @@ tab2 = bin2tab(0x8000, form)
 print"done"
 for k,v in pairs(tab2) do
 	if type(v) == "table" then
+		local found = false
 		for k2,v in pairs(v) do
+			found = true
 			print(k..","..k2.."="..tostr(v))
+		end
+		if not found then
+			print(k.."={}")
 		end
 	else
 		print(k.."="..tostr(v))
