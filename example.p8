@@ -32,13 +32,36 @@ __lua__
 -- print(d)
 
 
-form = "[#8,#8-128,%,?8]"
+--form = "[#8,#8-128,%,?8]"
+--tab = {10,-10,true,"this is a test"}
+
+--form = "{a=#8,b=#8,c=#8}"
+--tab = {a=10,b=20,c=30}
+
+--form = "[[#8,#8,#8],[#8,#8,#8]]"
+--tab = {{1,2,3},{9,8,7}}
+
+--form = "{a={x=#8,y=#8},b={x=#8,y=#8}}"
+--tab = {a={x=100,y=200},b={x=5,y=6}}
+
+--form = "[#8([#8)]"
+--tab = {1,2,3,9,8,7}
+
+form = "[#8([#8(#8)])]"
+tab = {{1,2,3,4},{3},{9,8,7}}
+
 --form = "[#8>>16@dec#8+dec]"
-tab = {10,-10,true,"this is a test"}
 print(tab2bin(tab, 0x8000, form))
 tab2 = bin2tab(0x8000, form)
-for t in all(tab2) do
-	print(t)
+print"done"
+for k,v in pairs(tab2) do
+	if type(v) == "table" then
+		for k2,v in pairs(v) do
+			print(k..","..k2.."="..tostr(v))
+		end
+	else
+		print(k.."="..tostr(v))
+	end
 end
 
 __gfx__
