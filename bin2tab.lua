@@ -9,7 +9,7 @@ function char_set(str)
 	return tab
 end
 
-function bin2tab(addr, format, sub)
+function bin2tab(addr, format, subformat)
 	local function r_bits()
 		local b, c, a, mask = 0, 8, addr, split"1,3,7,15,31,63,127,255" -- is table read faster than ((1<<x)-1) ?
 		-- can only read 16 bits at a time
@@ -71,7 +71,7 @@ function bin2tab(addr, format, sub)
 			ch = format[i]
 		end
 
-		if char_stores[ch] and last_value then -- store value in table on })],
+		if char_stores[ch] and last_value ~= nil then -- store value in table on })],
 			tab_current[tab_i] = last_value
 			tab_i = tab_type == "[" and tab_i+1 or ""
 			last_value = nil

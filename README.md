@@ -110,6 +110,10 @@ form = "[#8({name=?5,health=#5,maxhealth=#5})]"
 
 `todo: add examples of sub-formats when implemented`
 
-## Extras
+## Extras/Ideas
+
+a string format that doesn't take in a length, but instead looks for a terminating character.
+
+A more compressed string format, that instead uses 5 or 6 bits per character, or a format with more steps to better compress the string.
 
 Something that would be nice to have is a format calculator function that takes in a table and returns a string that would best compress that table. This way any the format could be stored inside the pico-memory and the table could be easily compressed and decompressed without even knowing the format. Though this would be very complex and will likely have problems. (So I will not be the one making it if ever.)

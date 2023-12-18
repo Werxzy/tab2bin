@@ -57,7 +57,7 @@ function char_set(str)
 	return tab
 end
 
--- to be reworked and fixed
+--[[ to be reworked and fixed
 
 function tab2bin(tab, addr, format, sub)
 	-- pushes bits from the right
@@ -122,7 +122,7 @@ function tab2bin(tab, addr, format, sub)
 	for loops, could hold a stack of rollback info
 		original byte addr, byte value at that stage
 		when one iteration is complete, increment the loop value and then continue
-	]]
+	] ]
 
 	-- for loops, try storing an indexed table to bits to be written
 	-- store where in everything that needs to be rolled back if an inconsistency is found
@@ -213,149 +213,255 @@ function tab2bin(tab, addr, format, sub)
 	end
 	writer(0, 7) -- write 7 bits just in case
 end
+--]]
+
+char_stoppers = char_set"#%?!@$-+<>(){}[],="
+function read_to_stopper(i, str)
+	local ch, s = "", ""
+	repeat
+		s ..= ch
+		i += 1
+		ch = str[i]
+	until not ch or char_stoppers[ch] 
+	-- could use sub() to improve performance?
+	return i,s
+end
+
+
+-- due to rollback, may need to make a metatable
+function w_bits(addr)
+	local addr0, b, c, mask = addr, 0, 8, split"1,3,7,15,31,63,127,255" -- apparently ((1<<x)-1) is faster
+	-- can only write 16 bits at a time
+	return function(x, n)
+		if(x == "len") return addr - addr0
+		while n > 0 do
+			local c2 = min(n, c) -- get max possible write for byte
+			n -= c2 -- decrease total write count
+			c -= c2 -- decreate write count for current byte
+			b |= (x>>n & mask[c2]) << c -- take only needed bits
+
+			if c == 0 then
+				poke(addr, b)-- write next byte, put into position
+				b = 0
+				addr += 1 -- next address
+				c = 8 -- reset bit read count
+			end
+		end
+		return x
+	end
+end
 
 
 -- attempt 2
 -- instead store bit write information in a table 
 -- only write when outside of a loop
-function tab2bin(tab, addr, format, sub) 
+function tab2bin(tab, addr, format, subformat) 
 	
 	-- init writer only if addr is an address
-	-- todo, organize functions for what this is
-	-- may need a metatable 
-	-- local writer = type(addr) == "number" and writer(addr) or addr
+	local writer = type(addr) == "number" and w_bits(addr) or addr
 
 	local char_stores = char_set"})],"
-	
+	local group_stoppers = char_set"(){}[],=" -- does not include @-+<>
+
+
+	local tab_current = {tab}
+	local tab_i = 1
+	local tab_stack = {}
+	local tab_type = "["
+
 	local byte_stack = {} -- {{value, bit count},...}
 	local rollback_stack = {}
+	local stored_values = {}
 
-	local function rollback()
+	-- local function rollback()
+	-- end
+	-- local function rollback_pop()
+	-- end
+	-- local function rollback_push()
+	-- end
 
+	-- local function write(x, n)
+	-- 	if #rollback_stack > 0 then
+	-- 		add(byte_stack, {x,n})
+	-- 	else
+	-- 		-- actually write the bits
+	-- 	end
+	-- end
+
+	local function val(v)
+		return tonum(v) or stored_values[v]
 	end
 
-	local function rollback_pop()
-	
-	end
-	
-	local function rollback_push()
-
-	end
-
-	local function write(x, n)
-		if #rollback_stack > 0 then
-			add(byte_stack, {x,n})
-		else
-			-- actually write the bits
-		end
-	end
+	local i = 1
 
 	while i < #format do
 		local ch = format[i]
 
-		-- todo, get key if in keyed table
-
-		local j, loop_stack_count, ch2, groups, firstloop = i, 0, "", {}
+		-- read key for next index-table element
+		if tab_type == "{" and not char_stores[ch] then
+			i, tab_i = read_to_stopper(i-1, format)
+			i += 1
+			ch = format[i]
+		end
 		
 		-- read if next character is for a table {}[],
+		if ch == "[" or ch == "{" then
+			add(tab_stack, {tab_current, tab_i, tab_type})
+			tab_current = tab_current[tab_i]
+			tab_type = ch
+			tab_i = ch == "[" and 1 or ""
 
-		-- calculate groups "#8@b#8+10>>8!55" => {"#8@b", "#8+10>>8", "!55"}
-		repeat
-			local ch2 = format[j] -- todo, check where i+=1 is needed
-			
-			if loop_stack_count == 0 then
-				if i ~= j and (ch2 == "#" or ch2 == "!" or ch2 == "%" or ch2 == "?") then
-					add(groups, sub(format,i,j-1))
-					i = j+1
-				end
+
+		elseif ch == "]" or ch == "}" then
+			last_value = tab_current
+			tab_current, tab_i, tab_type = unpack(deli(tab_stack))
+
+
+		elseif ch == "," then
+			if tab_type == "[" then
+				tab_i += 1
 			end
-			
-			if ch2 == "(" then loop_stack_count += 1 if(not firstloop) firstloop = i
-			elseif ch2 == ")" then loop_stack_count -= 1
-			end
-			j += 1
-			-- we want to stop at the end of the last loop #8([#2(#2)])Vhere
-		until group_stoppers[ch2] and loop_stack_count == 0
 
-		if firstloop then
-			-- sub from first "(" to last ")"
-			-- get length calculation from before "("
-			-- #8() should expect a length from 0 to 255
-			-- #8+45() should expect a length from 45 to 300
-			-- !len should expect a length of given amount
-			-- #8#8!8 something that gets overwritten without reaching an output or @ should write only zeroes
-			-- 		and/or potentially trying to turn a table into bits should write only zeroes
-
-			-- could process all but the last group normally, though they should probably cause errors
-			
-			local valid, bits = tab2bin(current_tab[tab_i], writer, sub(format, i, j-1), sub) 
-			i = j
-			-- might not need bits? would need to figure this out
-
-			if valid then
-				-- write length bits
-				-- THEN write table bits
-			else
-				-- rollback
-				-- should rollback happen for all loops? ((())) or just the loop the failure happened?
-			end
+	
 		else
-			-- proceed calculations per group
-			-- should only contain $#@%!?+-<> n and xyz
-			
-			
-			for g in all(groups) do
-				local value = tab_current[tab_i] -- needs to be reread for each group
+			local j, loop_stack_count, groups, firstloop = i, 0, {}
+			-- calculate groups "#8@b#8+10>>8!55" => {"#8@b", "#8+10>>8", "!55"}
+			repeat
+				local ch2 = format[j] -- todo, check where i+=1 is needed
+				
+				if loop_stack_count == 0 then
+					if i ~= j and (ch2 == "#" or ch2 == "!" or ch2 == "%" or ch2 == "?" or group_stoppers[ch2]) then
+						add(groups, sub(format,i,j-1))
+						i = j+1
+					end
+				end
+				
+				if ch2 == "(" then loop_stack_count += 1 if(not firstloop) firstloop = i
+				elseif ch2 == ")" then loop_stack_count -= 1
+				end
+				j += 1
+				-- we want to stop at the end of the last loop #8([#2(#2)])Vhere
+			until group_stoppers[ch2] and loop_stack_count == 0
+			j -= 2
+			i = j
 
-				local ch1 = g[1]
+			if firstloop then
+				-- sub from first "(" to last ")"
+				-- get length calculation from before "("
+				-- #8() should expect a length from 0 to 255
+				-- #8+45() should expect a length from 45 to 300
+				-- !len should expect a length of given amount
+				-- #8#8!8 something that gets overwritten without reaching an output or @ should write only zeroes
+				-- 		and/or potentially trying to turn a table into bits should write only zeroes
 
-				if ch1 == "#" then -- read things backwards to calculate the expected value
-					local j = #str
-					while j > 0 do
+				-- could process all but the last group normally, though they should probably cause errors
+				
+				local valid, bits = tab2bin(current_tab[tab_i], writer, sub(format, i, j-1), sub) 
+				i = j
+				-- might not need bits? would need to figure this out
 
-						-- reads backwards to reverse calculate the what is to be written
-						local ch2, s = "", ""
-						repeat
-							s ..= ch2
+				if valid then
+					-- write length bits
+					-- THEN write table bits
+				else
+					-- rollback
+					-- should rollback happen for all loops? ((())) or just the loop the failure happened?
+				end
+
+
+			else
+				i = j
+				-- proceed calculations per group
+				-- should only contain $#@%!?+-<> n and xyz
+				for g in all(groups) do
+					local value = tab_current[tab_i] -- needs to be reread for each group
+					local ch1 = g[1]
+
+					if ch1 == "#" then -- read things backwards to calculate the expected value
+						local j = #g
+						while j > 0 do
+
+							-- reads backwards to reverse calculate the what is to be written
+							local ch2, s = "", ""
+							repeat
+								s = ch2 .. s
+								ch2 = g[j]
+								j -= 1
+							until j <= 0 or char_stoppers[ch2] 
+							j += 1
+
+							local v = val(s)
+
+							if ch2 == "#" then -- write bits to be read later
+								writer(value, v)
+							elseif ch2 == "@" then
+								stored_values[s] = value
+
+							-- do the opposite of the asked action
+							elseif ch2 == "+" then 
+								value -= v
+							elseif ch2 == "-" then 
+								value += v
+							elseif ch2 == ">" then 
+								value <<= v
+							elseif ch2 == "<" then 
+								value >>>= v
+							
+							end
+
 							j -= 1
-							ch2 = str[j]
-						until not ch2 or char_stoppers[ch] 
-
-						local v = val(s)
-
-						if ch2 == "#" then -- write bits to be read later
-							writer(value, s)
-						elseif ch2 == "@" then
-							stored_values[s] = value
-
-						-- do the opposite of the asked action
-						elseif ch2 == "-" then 
-							value += s
-						elseif ch2 == "+" then 
-							value -= s
-						elseif ch2 == "<" then 
-							value >>>= s
-						elseif ch2 == ">" then 
-							value <<= s
-						
 						end
 
-						j -= 1
+					
+					else
+						local j, last_value, g2 = 1, value
+
+						while j <= #g do
+							local ch2 = g[j]
+							j, g2 = read_to_stopper(j, g)
+							
+
+							if ch == "%" then -- read 1 bit to bool
+								last_value = val(last_value and true or false)
+								writer(tonum(last_value), 1)
+							elseif ch == "!" then -- set last value to given
+								last_value = val(g2)
+							
+							elseif ch == "@" then -- store last value
+								stored_values[g2] = last_value
+					
+							elseif ch == "+" then -- add number
+								last_value += val(g2)
+							elseif ch == "-" then -- subtract
+								last_value -= val(g2)
+							elseif ch == ">" then -- shift right
+								last_value >>>= val(g2)
+							elseif ch == "<" then -- shift left
+								last_value <<= val(g2)
+					
+							elseif ch == "?" then -- read string data
+								assert(type(last_value) == "string", "expected string") -- might give more information
+								local length = #last_value
+								writer(length, val(g2)) -- write length
+								for i=1,length do
+									writer(ord(last_value[i]) or 0, 8) -- write bytes
+								end
+								-- doesn't support #8+10@n?n
+							end
+							j += 1
+						end
 					end
-
-				-- may merge %!? as they are similar
-				elseif ch1 == "%" then -- read entry as bool and proceed normally
-					-- write bool value of string
-
-				elseif ch1 == "!" then -- sets a value, doesn't write any bits, but may write to a stored variable
-
-				elseif ch1 == "?" then -- read entry as string and proceed normally
-					-- write length of expected string
-					-- write bytes of string
-				
+					
 				end
 			end
 		end
+
+		i += 1
 	end
+
+	writer(0, 7) -- write 7 bits just in case
+
+	-- if type(addr) == "number" then -- will need to change what is returned based on what level the function is on
+	return writer("len")
 end
 -- probably too many nested statements

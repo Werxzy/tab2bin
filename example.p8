@@ -5,31 +5,41 @@ __lua__
 #include tab2bin.lua
 
 
--- d = {{1,2,3},{100,200,300},{255,64,8}}}
--- tab2bin(d, 0x8000, form)
-poke(0x8000, 3, 1,2,3, 100,150,200, 255,64,8)
---temp poke
+-- -- d = {{1,2,3},{100,200,300},{255,64,8}}}
+-- -- tab2bin(d, 0x8000, form)
+-- poke(0x8000, 3, 1,2,3, 100,150,200, 255,64,8)
+-- --temp poke
 
--- form = "{a=[#8,#8,#8],b=[#8,#8,#8],asdf=[#8,#8,#8]}"
--- form = "[[#8,#8,#8],[#8,#8,#8],[#8,#8,#8]]"
--- form = "[#8([#8,#8,#8])]"
-form = "[#8([!3(#8)])]"
+-- -- form = "{a=[#8,#8,#8],b=[#8,#8,#8],asdf=[#8,#8,#8]}"
+-- -- form = "[[#8,#8,#8],[#8,#8,#8],[#8,#8,#8]]"
+-- -- form = "[#8([#8,#8,#8])]"
+-- form = "[#8([!3(#8)])]"
 
-d = bin2tab(0x8000, form)
-for a in all(d) do
-	local s = ""
-	for b in all(a) do
-		s ..= b .. "\t"
-	end
-	print(s)
+-- d = bin2tab(0x8000, form)
+-- for a in all(d) do
+-- 	local s = ""
+-- 	for b in all(a) do
+-- 		s ..= b .. "\t"
+-- 	end
+-- 	print(s)
+-- end
+
+
+-- form = "?8"
+-- --form = "[?8]"
+-- poke(0x8000, 5, ord("abcde", 1, 5))
+-- d = bin2tab(0x8000, form)
+-- print(d)
+
+
+form = "[#8,#8-128,%,?8]"
+--form = "[#8>>16@dec#8+dec]"
+tab = {10,-10,true,"this is a test"}
+print(tab2bin(tab, 0x8000, form))
+tab2 = bin2tab(0x8000, form)
+for t in all(tab2) do
+	print(t)
 end
-
-
-form = "?8"
---form = "[?8]"
-poke(0x8000, 5, ord("abcde", 1, 5))
-d = bin2tab(0x8000, form)
-print(d)
 
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
