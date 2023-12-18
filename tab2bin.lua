@@ -75,7 +75,6 @@ function w_bits(addr)
 	-- can only write 16 bits at a time
 	return function(x, n)
 		if(x == "len") return addr - addr0
-		-- print(x .. " " .. n)
 		while n > 0 do
 			local c2 = min(n, c) -- get max possible write for byte
 			n -= c2 -- decrease total write count
@@ -211,48 +210,38 @@ function tab2bin(tab, addr, format, subformat)
 					end
 				end
 				
-				if ch2 == "(" then loop_stack_count += 1 if(not firstloop) firstloop = i
+				if ch2 == "(" then loop_stack_count += 1 if(not firstloop) firstloop = j
 				elseif ch2 == ")" then loop_stack_count -= 1
 				end
 				j += 1
 				-- we want to stop at the end of the last loop #8([#2(#2)])Vhere
 			until group_stoppers[ch2] and loop_stack_count == 0 or not ch2
 			j -= 2
-			i,j = j,i
+			-- i,j = j,i
+			i = j
+			
 			
 			if firstloop then
-				-- sub from first "(" to last ")"
-				-- get length calculation from before "("
-				-- #8() should expect a length from 0 to 255
-				-- #8+45() should expect a length from 45 to 300
-				-- !len should expect a length of given amount
-				-- #8#8!8 something that gets overwritten without reaching an output or @ should write only zeroes
-				-- 		and/or potentially trying to turn a table into bits should write only zeroes
-
 				-- could process all but the last group normally, though they should probably cause errors
-				local valid, count = true, 0
-				writer("push")
-				local f = sub(format, j, i)
-				-- print(i .. " " .. j .. " " .. firstloop)
+				local valid, loopformat = true, sub(format, firstloop+1, i)
+				write_value = 0
+				writer"push"
 
 				while valid and tab_current[tab_i] do
-					valid = tab2bin(tab_current[tab_i], writer, f, subformat) 
+					valid = tab2bin(tab_current[tab_i], writer, loopformat, subformat) 
 					-- might not need bits? would need to figure this out
 					if valid then -- entry is valid
 						tab_i += 1
-						count += 1
-						writer("confirm")
+						write_value += 1
+						writer"confirm"
 					else -- entry is invalid
-						writer("rollback")
+						writer"rollback"
 					end 
 				end
 				
-				writer("prep length")
-				write_value = count
+				i += 1
+				writer"prep length"
 				
-
-				-- may need this because I want to skip the ")" to skip any byte pushing or "tab_i += 1"
-				-- i += 1
 					
 				--!!! maybe push the writing into the groups part below, treating the entry length as the written value
 				-- THEN if the value can't fit, consider the segment invalid
@@ -285,7 +274,11 @@ function tab2bin(tab, addr, format, subformat)
 						local v = val(s)
 
 						if ch2 == "#" then -- write bits to be read later
-							
+							if(type(value) ~= "number" or value & (1<<v)-1 ~= value) return false
+							-- assert(value & (1<<v)-1 == value, "invalid size")
+							-- the number won't fit
+							-- could also return false
+
 							writer(value, v)
 							
 						elseif ch2 == "@" then
@@ -314,30 +307,31 @@ function tab2bin(tab, addr, format, subformat)
 						
 						local ch2 = g[j]
 						j, g2 = read_to_stopper(j, g)
-						
+						local v = val(g2)
 
 						if ch == "%" then -- read 1 bit to bool
 							last_value = val(last_value and true or false)
 							writer(tonum(last_value), 1)
 						elseif ch == "!" then -- set last value to given
-							last_value = val(g2)
+							last_value = v
 						
 						elseif ch == "@" then -- store last value
 							stored_values[g2] = last_value
 				
 						elseif ch == "+" then -- add number
-							last_value += val(g2)
+							last_value += v
 						elseif ch == "-" then -- subtract
-							last_value -= val(g2)
+							last_value -= v
 						elseif ch == ">" then -- shift right
-							last_value >>>= val(g2)
+							last_value >>>= v
 						elseif ch == "<" then -- shift left
-							last_value <<= val(g2)
+							last_value <<= v
 				
 						elseif ch == "?" then -- read string data
-							assert(type(last_value) == "string", "expected string") -- might give more information
+							-- assert(type(last_value) == "string", "expected string") -- might give more information
+							if(type(last_value) ~= "string") return false
 
-							writer(#last_value, val(g2)) -- write length
+							writer(#last_value, v) -- write length
 							for i=1,#last_value do
 								writer(ord(last_value[i]) or 0, 8) -- write bytes
 							end
@@ -346,11 +340,10 @@ function tab2bin(tab, addr, format, subformat)
 						j += 1
 					end
 				end
-				
 			end
 			
 			if firstloop then -- pop
-				writer("pop")
+				writer"pop"
 			end
 		end
 		
@@ -359,7 +352,7 @@ function tab2bin(tab, addr, format, subformat)
 	
 	if type(addr) == "number" then
 		writer(0, 7) -- write 7 bits just in case
-		return writer("len")
+		return writer"len"
 	else
 		return true
 	end

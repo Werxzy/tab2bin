@@ -89,7 +89,6 @@ function bin2tab(addr, format, subformat)
 			tab_current, tab_i, tab_type = unpack(deli(tab_stack))
 
 		elseif ch == "(" then -- start of loop
-			print("a"..last_value)
 			if last_value > 0 then
 		    	add(loop_stack, {i, last_value})
 			else -- no values to read inside loop, skip to end of loop
