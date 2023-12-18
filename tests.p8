@@ -93,6 +93,10 @@ assert(test(
     "[#8([!3(#8)])]",
     {{1,2,3},{9,8,7}}
 ))
+assert(test(
+    "[#8({x=#8,y=#8})]",
+    {{x=100,y=200},{x=5,y=6}}
+))
 
 print("all tests passed")
 __gfx__

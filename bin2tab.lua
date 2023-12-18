@@ -1,7 +1,9 @@
 -- bin2tab
 -- by werxzy
 
-function char_set(str)
+do
+
+local function char_set(str)
 	local tab = {}
 	for s in all(str) do
 		tab[s] = true
@@ -9,40 +11,33 @@ function char_set(str)
 	return tab
 end
 
-function bin2tab(addr, format, subformat)
-	local function r_bits()
-		local b, c, a, mask = 0, 8, addr, split"1,3,7,15,31,63,127,255" -- is table read faster than ((1<<x)-1) ?
-		-- can only read 16 bits at a time
-		return function(n)
-			local x = 0
-			while n > 0 do
-				if c == 8 then
-					b = @a>>8 -- read next byte, put into position
-					a += 1 -- next address
-					c = 0 -- reset bit read count
-				end
-				local c2 = min(n, 8-c) -- get max possible read for byte
-				c += c2 -- raise read count for current byte
-				n -= c2 -- decrease total read count
-				x |= (b<<c & mask[c2]) << n -- take only needed bits
+local char_stores = char_set"})],"
+local char_stoppers = char_set"#%?!@$-+<>(){}[],="
+
+local function r_bits(addr)
+	local b, c, a = 0, 8, addr
+	-- can only read 16 bits at a time
+	return function(n)
+		local x = 0
+		while n > 0 do
+			if c == 8 then
+				b = @a>>8 -- read next byte, put into position
+				a += 1 -- next address
+				c = 0 -- reset bit read count
 			end
-			return x
+			local c2 = min(n, 8-c) -- get max possible read for byte
+			c += c2 -- raise read count for current byte
+			n -= c2 -- decrease total read count
+			x |= (b<<c & (1<<c2)-1) << n -- take only needed bits
 		end
+		return x
 	end
-	local reader = r_bits()
+end
+
+function bin2tab(addr, format, subformat)
 	
-	local char_stores = char_set"})],"
-	-- local simple_op = char_set"#%?!@$-+<>"
-	local char_stoppers = char_set"#%?!@$-+<>(){}[],="
-	
-	local tab_current = {}
-	local tab_i = 1
-	local tab_type = "["
-	local tab_stack = {}
-	local loop_stack = {}
-	local stored_values = {}
-	local last_value = nil
-	local i = 1
+	local reader, tab_current, tab_i, tab_type, tab_stack, loop_stack, stored_values, i, last_value 
+		= r_bits(addr), {}, 1, "[", {}, {}, {}, 1
 
 	local function read_to_stopper()
 		local ch, s = "", ""
@@ -72,21 +67,18 @@ function bin2tab(addr, format, subformat)
 		end
 
 		if char_stores[ch] and last_value ~= nil then -- store value in table on })],
-			tab_current[tab_i] = last_value
+			tab_current[tab_i], last_value = last_value
 			tab_i = tab_type == "[" and tab_i+1 or ""
-			last_value = nil
 		end
 		
 		if ch == "[" or ch == "{" then -- start of table
 			-- add to stack, then update index and type
 			add(tab_stack, {tab_current, tab_i, tab_type})
-			tab_current = {}
-			tab_type = ch
-			tab_i = ch == "[" and 1 or ""
+			tab_current, tab_i, tab_type 
+				= {}, ch == "[" and 1 or "", ch
 
 		elseif ch == "]" or ch == "}" then -- end of table
-			last_value = tab_current
-			tab_current, tab_i, tab_type = unpack(deli(tab_stack))
+			last_value, tab_current, tab_i, tab_type = tab_current, unpack(deli(tab_stack))
 
 		elseif ch == "(" then -- start of loop
 			if last_value > 0 then
@@ -140,4 +132,6 @@ function bin2tab(addr, format, subformat)
 
 	-- last value should be expected to be the final table due to } or ]
 	return last_value 
+end
+
 end
