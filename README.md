@@ -2,8 +2,6 @@
 
 tab2bin and bin2tab are functions for converting a table of a known format/shape into binary within Pico-8.
 
-Currently tab2bin is being worked on.
-
 ## Table Format
 
 |||

@@ -150,27 +150,24 @@ function tab2bin(tab, addr, format, subformat)
 			until group_stoppers[ch2] and loop_stack_count == 0 or not ch2
 			i -= 2
 			
-			if firstloop then
-				-- could process all but the last group normally, though they should probably cause errors
-				local valid, loopformat = true, sub(format, firstloop+1, i)
+			if firstloop then -- process the outside most loop
+				local loopformat = sub(format, firstloop+1, i)
 				write_value = 0
 				writer"push"
 
-				while valid and tab_current[tab_i] do
-					valid = tab2bin(tab_current[tab_i], writer, loopformat, subformat) 
-					-- might not need bits? would need to figure this out
-					if valid then -- entry is valid
+				while tab_current[tab_i] do
+					if tab2bin(tab_current[tab_i], writer, loopformat, subformat) then -- entry is valid
 						tab_i += 1
 						write_value += 1
 						writer"confirm"
 					else -- entry is invalid
 						writer"rollback"
+						break
 					end 
 				end
 				
 				i += 1
 				writer"prep length"
-
 			end
 			
 			-- proceed calculations per group
