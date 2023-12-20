@@ -12,7 +12,7 @@ local function char_set(str)
 end
 
 local char_stoppers, char_stores, group_stoppers, char_non_modifier
-	= char_set"#%?!@$-+<>(){}[],=", char_set"})],", char_set"(){}[],=", char_set"#%?!@$(){}[],="
+	= char_set"#%?!@$-+<>(){}[],=", char_set"})],", char_set"(){}[],=", char_set"#%?!$(){}[],="
 
 local function read_to_stopper(i, str)
 	local ch, s = "", ""
@@ -42,7 +42,6 @@ local function w_bits(addr)
 				addr += 1 -- next address
 			end
 		end
-		return x
 	end
 end
 
@@ -82,7 +81,7 @@ local function rollback_writer(addr)
 				or #byte_stack+1)
 
 		else -- write normally
-			writer(x, n)
+			return writer(x, n)
 		end
 	end
 end
@@ -156,7 +155,7 @@ function tab2bin(tab, addr, format, subformat, stored_values_carried)
 				writer"push"
 
 				while tab_current[tab_i] != nil do
-					if tab2bin(tab_current[tab_i], writer, loopformat, subformat) then -- entry is valid
+					if tab2bin(tab_current[tab_i], writer, loopformat, subformat, stored_values) then -- entry is valid
 						tab_i += 1
 						write_value += 1
 						writer"confirm"
@@ -192,7 +191,8 @@ function tab2bin(tab, addr, format, subformat, stored_values_carried)
 						local v = val(s)
 
 						if ch2 == "#" then -- write bits to be read later
-							if(type(value) ~= "number" or value & (1<<v)-1 ~= value) return false
+							-- if(type(value) ~= "number" or value & (1<<v)-1 ~= value) return false
+							if(type(value) ~= "number") return false
 							writer(value, v)
 							
 						elseif ch2 == "@" then
