@@ -116,7 +116,7 @@ function bin2tab(addr, format, subformat, stored_values_carried, last_value_carr
 		elseif ch == "-" then -- subtract
 			last_value -= val(read_to_stopper())
 		elseif ch == ">" then -- shift right
-			last_value >>= val(read_to_stopper())
+			last_value >>>= val(read_to_stopper())
 		elseif ch == "<" then -- shift left
 			last_value <<= val(read_to_stopper())
 
