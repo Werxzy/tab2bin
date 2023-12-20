@@ -57,7 +57,7 @@ function bin2tab(addr, format, subformat, stored_values_carried, last_value_carr
 	while i <= #format do
 		local ch = format[i]
 		
-		if tab_type == "{" and not char_stores[ch] then
+		if tab_type == "{" and not char_stoppers[ch] then
 			-- read key for next index-table element
 			i -= 1
 			tab_i = read_to_stopper()
