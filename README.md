@@ -28,7 +28,7 @@ Currently, bin2tab requires `482` tokens and tab2bin requires `864` tokens. Ther
 |`!n`| Stores n as the `last read value` |
 |`+n`| Alters the `last read value` by adding n |
 |`-n`| Alters the `last read value` by subtracting n |
-|`>n`| Alters the `last read value` by shifting right n `>>>` |
+|`>n`| Alters the `last read value` by shifting right n `>>` |
 |`<n`| Alters the `last read value` by shifting left n `<<` |
 |||
 |`$abc`| Starts a separate provided sub-format or function |

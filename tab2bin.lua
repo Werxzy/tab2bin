@@ -206,7 +206,7 @@ function tab2bin(tab, addr, format, subformat, stored_values_carried)
 						elseif ch2 == ">" then 
 							value <<= v
 						elseif ch2 == "<" then 
-							value >>>= v
+							value >>= v
 						
 						end
 
