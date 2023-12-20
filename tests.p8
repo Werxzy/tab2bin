@@ -50,9 +50,9 @@ end
 local tab = {1, 2, 3, {a=4,b=6,c=7,d={8,9}}, "test",{"test2", "test3"}}
 assert(equal(tab,tab))
 
-function test(format, tab)
-    tab2bin(tab, 0x8000, format)
-    local tab2 = bin2tab(0x8000, format)
+function test(format, tab, subformat2bin, subformat2tab)
+    tab2bin(tab, 0x8000, format, subformat2bin)
+    local tab2 = bin2tab(0x8000, format, subformat2tab or subformat2bin)
     if not equal(tab, tab2) then
         print_tab(tab)
         print_tab(tab2)
@@ -96,6 +96,39 @@ assert(test(
 assert(test(
     "[#8({x=#8,y=#8})]",
     {{x=100,y=200},{x=5,y=6}}
+))
+
+
+assert(test(
+    "[#8($num)]",
+    {1, 5, -4, 0.5, -0.5},
+    {num = "#8>1-64"}
+))
+
+function tobin(writer, last_value, stored_values)
+    if type(last_value) == "number" then
+        writer(1, 1)
+        writer(last_value, 8)
+    elseif type(last_value) == "boolean" then
+        writer(0, 1)
+        writer(tonum(last_value), 1)
+    else
+        return false
+    end
+    return true
+end
+
+function totab(reader, last_value, stored_values)
+    if reader(1) == 1 then
+        return reader(8)
+    end
+    return reader(1) == 1
+end
+
+assert(test(
+    "[#8($bn)]",
+    {1, 2, false, 4, true, false},
+    {bn = tobin}, {bn = totab}
 ))
 
 print("all tests passed")

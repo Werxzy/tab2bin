@@ -33,10 +33,10 @@ local function r_bits(addr)
 	end
 end
 
-function bin2tab(addr, format, subformat)
+function bin2tab(addr, format, subformat, stored_values_carried, last_value_carried)
 	
 	local reader, tab_current, tab_i, tab_type, tab_stack, loop_stack, stored_values, i, last_value 
-		= r_bits(addr), {}, 1, "[", {}, {}, {}, 1
+		= type(addr) == "number" and r_bits(addr) or addr, {}, 1, "[", {}, {}, stored_values_carried or {}, 1, last_value_carried
 
 	local function read_to_stopper()
 		local ch, s = "", ""
@@ -116,7 +116,7 @@ function bin2tab(addr, format, subformat)
 		elseif ch == "-" then -- subtract
 			last_value -= val(read_to_stopper())
 		elseif ch == ">" then -- shift right
-			last_value >>>= val(read_to_stopper())
+			last_value >>= val(read_to_stopper())
 		elseif ch == "<" then -- shift left
 			last_value <<= val(read_to_stopper())
 
@@ -124,6 +124,15 @@ function bin2tab(addr, format, subformat)
 			last_value = ""
 			for m = 1, reader(val(read_to_stopper())) do
 				last_value ..= chr(reader(8))
+			end
+
+		elseif ch == "$" then -- subformat
+			local subf = subformat[read_to_stopper()]
+			
+			if type(subf) == "string" then -- string subformat
+				last_value = bin2tab(reader, subf, subformat, stored_values, last_value)
+			elseif type(subf) == "function" then -- subformat dependent on a function
+				last_value = subf(reader, last_value, stored_values)
 			end
 		end
 

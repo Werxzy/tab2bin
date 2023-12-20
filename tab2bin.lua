@@ -90,10 +90,10 @@ end
 
 -- instead store bit write information in a table 
 -- only write when outside of a loop
-function tab2bin(tab, addr, format, subformat) 
+function tab2bin(tab, addr, format, subformat, stored_values_carried) 
 	-- init writer only if addr is an address
 	local writer, tab_current, tab_i, tab_stack, tab_type, stored_values, i
-		= type(addr) == "number" and rollback_writer(addr) or addr, {tab}, 1, {}, "[", {}, 1
+		= type(addr) == "number" and rollback_writer(addr) or addr, {tab}, 1, {}, "[", stored_values_carried or {}, 1
 
 	local function val(v)
 		return tonum(v) or stored_values[v]
@@ -155,7 +155,7 @@ function tab2bin(tab, addr, format, subformat)
 				write_value = 0
 				writer"push"
 
-				while tab_current[tab_i] do
+				while tab_current[tab_i] != nil do
 					if tab2bin(tab_current[tab_i], writer, loopformat, subformat) then -- entry is valid
 						tab_i += 1
 						write_value += 1
@@ -213,7 +213,6 @@ function tab2bin(tab, addr, format, subformat)
 						j -= 1
 					end
 
-					
 				else
 					local j, last_value, g2 = 1, value
 
@@ -236,7 +235,7 @@ function tab2bin(tab, addr, format, subformat)
 						elseif ch == "-" then -- subtract
 							last_value -= v
 						elseif ch == ">" then -- shift right
-							last_value >>>= v
+							last_value >>= v
 						elseif ch == "<" then -- shift left
 							last_value <<= v
 				
@@ -249,6 +248,19 @@ function tab2bin(tab, addr, format, subformat)
 								writer(ord(last_value[i]) or 0, 8) -- write bytes
 							end
 							-- doesn't support #8+10@xyz?xyz
+
+						elseif  g[1] == "$" then -- subformat
+							local subf, result = subformat[g2]
+
+							if type(subf) == "string" then
+								result = tab2bin(last_value, writer, subf, subformat, stored_values)
+							elseif type(subf) == "function" then
+								result = subf(writer, last_value, stored_values)
+							end
+
+							if not result then
+								return false -- failed for some reason
+							end
 						end
 						j += 1
 					end

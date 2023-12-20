@@ -2,7 +2,7 @@
 
 tab2bin and bin2tab are functions for converting a table of a known format/shape into binary within Pico-8.
 
-Currently, bin2tab requires `482` tokens and tab2bin requires `864` tokens.
+Currently, bin2tab requires `482` tokens and tab2bin requires `864` tokens. There's a lot of code that can be removed to reduce the amount of tokens if they aren't used.
 
 ## Table Format
 
@@ -51,13 +51,37 @@ While the `last read value` is made or changed, it only gets added to the table(
 
 After a store operation happens, the `last read value` is set to `nil` and store operations are skipped if the `last read value` is `nil`. If a new values is read into the `last read value`, the old one will be lost. In addition, the end of a table (`]` or `}`) will set that table to be the `last read value`, so that it can be appended to another table.
 
+### Subformats
+
+A table of subformats can be provided that are used at `$abc`. `abc` is the key inside the table while the value can either be a string or a function.
+
+The string version has the exact same rules as the tab2bin format.
+
+The function version requires a separate function for tab2bin and bin2tab
+
+```lua
+-- for tab2bin
+function tobin(writer, last_value, stored_values)
+    if type(last_value) == "number" then -- double check value is a number
+        writer(last_value, 8) -- write last_value as the next 8 bits
+        return true
+    end
+    return false -- return if the value being compressed is valid
+end
+
+-- for bin2 tab
+function totab(reader, last_value, stored_values)
+    return reader(8) -- read next 8 bits and return
+end
+```
+
 ## Examples
 
 ```lua
 -- reads 2 entries
 tab = {1,2}
 form = "[#8,#8]"
-tab2bin(form, nil, tab, 0x8000)
+tab2bin(tab, 0x8000, form)
 tab2 = tab2bin(0x8000, form)
 ```
 
@@ -108,7 +132,40 @@ tab = {
 form = "[#8({name=?5,health=#5,maxhealth=#5})]"
 ```
 
-`todo: add examples of sub-formats when implemented`
+```lua
+tab = {1, 5, -4, 0.5, -0.5},
+form = "[#8($num)]",
+subform = {num = "#8>1-64"}
+tab2bin(tab, 0x8000, form, subform)
+))
+
+```
+
+```lua
+function tobin(writer, last_value, stored_values)
+    if type(last_value) == "number" then
+        writer(1, 1)
+        writer(last_value, 8)
+    elseif type(last_value) == "boolean" then
+        writer(0, 1)
+        writer(tonum(last_value), 1)
+    else
+        return false
+    end
+    return true
+end
+
+function totab(reader, last_value, stored_values)
+    if reader(1) == 1 then
+        return reader(8)
+    end
+    return reader(1) == 1
+end
+
+tab = {1, 2, false, 4, true, false},
+form = "[#8($bn)]",
+subform = {bn = tobin} -- or {bn = totab} depending on if tab2bin or bin2tab is used
+```
 
 ## Extras/Ideas
 
