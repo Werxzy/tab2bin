@@ -51,6 +51,7 @@ local tab = {1, 2, 3, {a=4,b=6,c=7,d={8,9}}, "test",{"test2", "test3"}}
 assert(equal(tab,tab))
 
 function test(format, tab, subformat2bin, subformat2tab)
+    print(format)
     tab2bin(tab, 0x8000, format, subformat2bin)
     local tab2 = bin2tab(0x8000, format, subformat2tab or subformat2bin)
     if not equal(tab, tab2) then
@@ -96,6 +97,18 @@ assert(test(
 assert(test(
     "[#8({x=#8,y=#8})]",
     {{x=100,y=200},{x=5,y=6}}
+))
+
+assert(test(
+    "[#16>16@dec#16+dec]",
+    {0x1234.5678}
+    -- {1,-1,0.5,-0.5, 0xf0f0.0f0f, 0x1234.5678}
+))
+
+assert(test(
+    "[#8(#16>16@dec#16+dec)]",
+    {1,-1,0.5,-0.5, 0xf0f0.0f0f, 0x1234.5678}
+    -- {1,-1,0.5,-0.5, 0xf0f0.0f0f, 0x1234.5678}
 ))
 
 

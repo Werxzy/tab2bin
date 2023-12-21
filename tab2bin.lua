@@ -116,8 +116,7 @@ function tab2bin(tab, addr, format, subformat, stored_values_carried)
 				= tab_current[tab_i], ch, ch == "[" and 1 or ""
 
 		elseif ch == "]" or ch == "}" then
-			last_value, tab_current, tab_i, tab_type 
-				= tab_current, unpack(deli(tab_stack))
+			tab_current, tab_i, tab_type = unpack(deli(tab_stack))
 
 		elseif ch == "," then
 			if tab_type == "[" then
@@ -134,7 +133,7 @@ function tab2bin(tab, addr, format, subformat, stored_values_carried)
 				if loop_stack_count == 0 then
 					if i ~= j and (not ch2 or char_non_modifier[ch2]) then
 						add(groups, sub(format, j, i-1))
-						j = i+1
+						j = i
 					end
 				end
 				
@@ -171,12 +170,11 @@ function tab2bin(tab, addr, format, subformat, stored_values_carried)
 			
 			-- proceed calculations per group
 			-- should only contain $#@%!?+-<> n and xyz
+			local value = write_value
 			for g in all(groups) do
-				local value = write_value
-				
 				if g[1] == "#" then -- read things backwards to calculate the from the expected value
-					-- could potentially be merged with the other one 
-					-- (Would need to read the first command to understand what value is being read)
+					value = write_value
+
 					local j = #g
 					while j > 0 do
 						
@@ -193,6 +191,7 @@ function tab2bin(tab, addr, format, subformat, stored_values_carried)
 						if ch2 == "#" then -- write bits to be read later
 							-- if(type(value) ~= "number" or value & (1<<v)-1 ~= value) return false
 							if(type(value) ~= "number") return false
+							value &= (1<<v)-1 -- 
 							writer(value, v)
 							
 						elseif ch2 == "@" then
@@ -206,65 +205,65 @@ function tab2bin(tab, addr, format, subformat, stored_values_carried)
 						elseif ch2 == ">" then 
 							value <<= v
 						elseif ch2 == "<" then 
-							value >>= v
+							value >>>= v
 						
 						end
 
 						j -= 1
 					end
+					-- then write continue normally with the found values (mostly for @)
+				end
 
-				else
-					local j, last_value, g2 = 1, value
+				local j, g2 = 1
 
-					while j <= #g do
-						
-						j, g2 = read_to_stopper(j, g)
-						local v = val(g2)
+				while j <= #g do
+					local ch = g[j]
+					j, g2 = read_to_stopper(j, g)
+					local v = val(g2)
 
-						if ch == "%" then -- read 1 bit to bool
-							last_value = val(last_value and true or false)
-							writer(tonum(last_value), 1)
-						elseif ch == "!" then -- set last value to given
-							last_value = v
-						
-						elseif ch == "@" then -- store last value
-							stored_values[g2] = last_value
-				
-						elseif ch == "+" then -- add number
-							last_value += v
-						elseif ch == "-" then -- subtract
-							last_value -= v
-						elseif ch == ">" then -- shift right
-							last_value >>= v
-						elseif ch == "<" then -- shift left
-							last_value <<= v
-				
-						elseif ch == "?" then -- read string data
-							-- assert(type(last_value) == "string", "expected string") -- might give more information
-							if(type(last_value) ~= "string") return false
+					if ch == "%" then -- read 1 bit to bool
+						value = val(value and true or false)
+						writer(tonum(value), 1)
+					elseif ch == "!" then -- set last value to given
+						value = v
+					
+					elseif ch == "@" then -- store last value
+						stored_values[g2] = value
+			
+					elseif ch == "+" then -- add number
+						value += v
+					elseif ch == "-" then -- subtract
+						value -= v
+					elseif ch == ">" then -- shift right
+						value >>>= v
+					elseif ch == "<" then -- shift left
+						value <<= v
+			
+					elseif ch == "?" then -- read string data
+						-- assert(type(value) == "string", "expected string") -- might give more information
+						if(type(value) ~= "string") return false
 
-							writer(#last_value, v) -- write length
-							for i=1,#last_value do
-								writer(ord(last_value[i]) or 0, 8) -- write bytes
-							end
-							-- doesn't support #8+10@xyz?xyz
-
-						elseif  g[1] == "$" then -- subformat
-							local subf, result = subformat[g2]
-
-							if type(subf) == "string" then
-								result = tab2bin(last_value, writer, subf, subformat, stored_values)
-							elseif type(subf) == "function" then
-								result = subf(writer, last_value, stored_values)
-							end
-
-							if not result then
-								return false -- failed for some reason
-							end
+						writer(#value, v) -- write length
+						for i=1,#value do
+							writer(ord(value[i]) or 0, 8) -- write bytes
 						end
-						j += 1
+						-- doesn't support #8+10@xyz?xyz
+
+					elseif  g[1] == "$" then -- subformat
+						local subf, result = subformat[g2]
+
+						if type(subf) == "string" then
+							result = tab2bin(value, writer, subf, subformat, stored_values)
+						elseif type(subf) == "function" then
+							result = subf(writer, value, stored_values)
+						end
+
+						if not result then
+							return false -- failed for some reason
+						end
 					end
 				end
+
 			end
 			
 			if firstloop then -- pop loop if tab2bin was in one
