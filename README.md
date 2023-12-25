@@ -86,7 +86,7 @@ end
 tab = {1,2}
 form = "[#8,#8]"
 tab2bin(tab, 0x8000, form)
-tab2 = tab2bin(0x8000, form)
+tab2 = bin2tab(0x8000, form)
 ```
 
 ```lua
