@@ -2,7 +2,7 @@
 
 tab2bin and bin2tab are functions for converting a table of a known format/shape into binary within Pico-8.
 
-Currently, bin2tab requires `482` tokens and tab2bin requires `864` tokens. There's a lot of code that can be removed to reduce the amount of tokens if they aren't used.
+Currently, bin2tab requires `536` tokens and tab2bin requires `913` tokens. There's a lot of code that can be removed to reduce the amount of tokens if they aren't used.
 
 ## Table Format
 
