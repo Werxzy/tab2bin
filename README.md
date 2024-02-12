@@ -2,7 +2,7 @@
 
 tab2bin and bin2tab are functions for converting a table of a known format/shape into binary within Pico-8.
 
-Currently, bin2tab requires `482` tokens and tab2bin requires `864` tokens. There's a lot of code that can be removed to reduce the amount of tokens if they aren't used.
+Currently, bin2tab requires `536` tokens and tab2bin requires `913` tokens. There's a lot of code that can be removed to reduce the amount of tokens if they aren't used.
 
 ## Table Format
 
@@ -36,6 +36,10 @@ Currently, bin2tab requires `482` tokens and tab2bin requires `864` tokens. Ther
 
 ## In Depth
 
+### Reading Bits with `#`
+
+When Reading bits, `#` will only read up to 16 bits and will apply them starting from the least significant non-decimal bit (`0x1`) and go towards the most significant.  So `#7` would read the bits that overlap `0x7f` or `0b01111111`.
+
 ### Last Read Value
 
 The `last read value` is what is being assigned, altered, stored, and appended during the tab2bin and bin2tab functions. by applying something like `#9-256` you can have a full range of numbers from -256 to 255 with 9 bits of information. tab2bin applies this conversion for you.
@@ -49,7 +53,7 @@ While the `last read value` is made or changed, it only gets added to the table(
 - `}` end of keyed table
 - `)` end of loop
 
-After a store operation happens, the `last read value` is set to `nil` and store operations are skipped if the `last read value` is `nil`. If a new values is read into the `last read value`, the old one will be lost. In addition, the end of a table (`]` or `}`) will set that table to be the `last read value`, so that it can be appended to another table.
+Note that you will not need to place a `,` after a loop end (`)`).  After a store operation happens, the `last read value` is set to `nil` and store operations are skipped if the `last read value` is `nil`. If a new values is read into the `last read value`, the old one will be lost. In addition, the end of a table (`]` or `}`) will set that table to be the `last read value`, so that it can be appended to another table.
 
 ### Subformats
 
@@ -82,7 +86,7 @@ end
 tab = {1,2}
 form = "[#8,#8]"
 tab2bin(tab, 0x8000, form)
-tab2 = tab2bin(0x8000, form)
+tab2 = bin2tab(0x8000, form)
 ```
 
 ```lua
@@ -119,7 +123,7 @@ tab = {
     y = 30,
     z = 40
 }
-form = "{x=#8,y=#8,z=#8}
+form = "{x=#8,y=#8,z=#8}"
 ```
 
 ```lua
@@ -169,7 +173,7 @@ subform = {bn = tobin} -- or {bn = totab} depending on if tab2bin or bin2tab is 
 
 ## Extras/Ideas
 
-a string format that doesn't take in a length, but instead looks for a terminating character.
+A string format that doesn't take in a length, but instead looks for a terminating character.
 
 A more compressed string format, that instead uses 5 or 6 bits per character, or a format with more steps to better compress the string.
 
