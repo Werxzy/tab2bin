@@ -15,8 +15,8 @@ Currently, bin2tab requires `482` tokens and tab2bin requires `864` tokens. Ther
 
 |Characters| Function|
 |-|-|
-|`[_]`| Indexed table
-|`{_}`| Keyed table
+|`[_]`| Indexed table |
+|`{_}`| Keyed table |
 |`_,_`| Separate elements in a table |
 |`abc=_`| Denotes a key-value pair in a keyed table |
 |||

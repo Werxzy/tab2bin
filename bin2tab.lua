@@ -82,7 +82,7 @@ function bin2tab(addr, format, subformat, stored_values_carried, last_value_carr
 
 		elseif ch == "(" then -- start of loop
 			if last_value > 0 then
-		    	add(loop_stack, {i, last_value})
+				add(loop_stack, {i, last_value})
 			else -- no values to read inside loop, skip to end of loop
 				local loop_count = 1
 				repeat
